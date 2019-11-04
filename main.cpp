@@ -52,7 +52,7 @@ int main(void)
 }
 
 // Pointers to the resources that will be created in main_application().
-static M2MResource* button_res;
+static M2MResource* string_res;
 static M2MResource* pattern_res;
 static M2MResource* blink_res;
 static M2MResource* unregister_res;
@@ -228,9 +228,9 @@ void main_application(void)
 
 #ifndef MCC_MEMORY
     // Create resource for button count. Path of this resource will be: 3200/0/5501.
-    button_res = mbedClient.add_cloud_resource(3200, 0, 5501, "button_resource", M2MResourceInstance::INTEGER,
-                              M2MBase::GET_ALLOWED, 0, true, NULL, (void*)notification_status_callback);
-    button_res->set_value(0);
+    string_res = mbedClient.add_cloud_resource(3200, 0, 5501, "wi-sun Test_resource", M2MResourceInstance::STRING,
+                              M2MBase::GET_ALLOWED, "", true, NULL, (void*)notification_status_callback);
+  //  string_res->set_value(0);
 
     // Create resource for led blinking pattern. Path of this resource will be: 3201/0/5853.
     pattern_res = mbedClient.add_cloud_resource(3201, 0, 5853, "pattern_resource", M2MResourceInstance::STRING,
@@ -263,7 +263,7 @@ void main_application(void)
     mbedClient.register_and_connect();
 
 #ifndef MCC_MINIMAL
-    blinky.init(mbedClient, button_res);
+    blinky.init(mbedClient, string_res);
     blinky.request_next_loop_event();
 #endif
 

@@ -56,6 +56,7 @@ private:
     bool request_timed_event(uint8_t event_type, arm_library_event_priority_e priority, int32_t delay);
 
     void handle_buttons();
+	void handle_PelionUpdate();
 
 private:
     int get_next_int();
@@ -68,9 +69,9 @@ private:
 
     SimpleM2MClient *_client;
 
-    M2MResource     *_button_resource;
+    M2MResource     *_resource;
 
-    int              _button_count;
+    int              _Update_count;
 
     BlinkyState _state;
 

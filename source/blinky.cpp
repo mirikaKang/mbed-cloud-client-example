@@ -38,7 +38,7 @@
 #define BLINKY_TASKLET_PATTERN_TIMER 2
 #define BLINKY_TASKLET_LOOP_TIMER 3
 
-#define BUTTON_POLL_INTERVAL_MS 100
+#define INTERVAL_MS				 10000
 
 int8_t Blinky::_tasklet = -1;
 
@@ -62,11 +62,11 @@ Blinky::Blinky()
 : _pattern(NULL),
   _curr_pattern(NULL),
   _client(NULL),
-  _button_resource(NULL),
+  _resource(NULL),
   _state(STATE_IDLE),
   _restart(false)
 {
-    _button_count = 0;
+    _Update_count = 0;
 }
 
 Blinky::~Blinky()
@@ -92,7 +92,7 @@ void Blinky::init(SimpleM2MClient &client, M2MResource *resource)
     }
 
     _client = &client;
-    _button_resource = resource;
+    _resource = resource;
 
     // create the tasklet, if not done already
     create_tasklet();
@@ -184,10 +184,10 @@ void Blinky::event_handler(const arm_event_s &event)
 {
     switch (event.event_type) {
         case BLINKY_TASKLET_PATTERN_TIMER:
-            handle_pattern_event();
+             // handle_pattern_event();
             break;
         case BLINKY_TASKLET_LOOP_TIMER:
-            handle_buttons();
+            handle_PelionUpdate();
             break;
         case BLINKY_TASKLET_PATTERN_INIT_EVENT:
         default:
@@ -208,7 +208,7 @@ void Blinky::handle_pattern_event()
 
 void Blinky::request_next_loop_event()
 {
-    request_timed_event(BLINKY_TASKLET_LOOP_TIMER, ARM_LIB_LOW_PRIORITY_EVENT, BUTTON_POLL_INTERVAL_MS);
+    request_timed_event(BLINKY_TASKLET_LOOP_TIMER, ARM_LIB_LOW_PRIORITY_EVENT, INTERVAL_MS);
 }
 
 // helper for requesting a event by given type after given delay (ms)
@@ -235,16 +235,55 @@ bool Blinky::request_timed_event(uint8_t event_type, arm_library_event_priority_
 
 void Blinky::handle_buttons()
 {
-    assert(_client);
-    assert(_button_resource);
+ //   assert(_client);
+//    assert(_button_resource);
 
     // this might be stopped now, but the loop should then be restarted after re-registration
     request_next_loop_event();
 
+//    if (_client->is_register_called()) {
+//        if (mcc_platform_button_clicked()) {
+//            _resource->set_value(++_button_count);
+//            printf("Button resource updated. Value %d\n", _button_count);
+//        }
+//    }
+}
+
+#define CHUNK_SIZE	5000
+const char SEND_DATA[]="0123456789";
+static char SendData[CHUNK_SIZE+2];
+void Blinky::handle_PelionUpdate(void)
+{
+	
+	 assert(_client);
+    assert(_resource);
+
+
+    // this might be stopped now, but the loop should then be restarted after re-registration
+    request_next_loop_event();
+
+	
     if (_client->is_register_called()) {
-        if (mcc_platform_button_clicked()) {
-            _button_resource->set_value(++_button_count);
-            printf("Button resource updated. Value %d\n", _button_count);
-        }
-    }
+			memset( SendData,0,sizeof(SendData));
+			int _size=1;
+			int _pos=1; 
+			SendData[0]='"';
+			for( int i=0;i<_Update_count;i++)
+			{
+				if(_pos < (CHUNK_SIZE-sizeof(SEND_DATA)) )
+				{
+					memcpy(&SendData[_pos],SEND_DATA,sizeof(SEND_DATA));
+					if( _pos + (sizeof(SEND_DATA)) < (CHUNK_SIZE-sizeof(SEND_DATA)))
+					{
+						_pos+= (sizeof(SEND_DATA));	
+					}
+					else
+						break;
+					 
+				}
+			}
+			SendData[_pos++]='"';
+			_resource->set_value((const uint8_t*)SendData,_pos);
+            printf("Pelion _data Update  %d,size=%d\n", _Update_count++,_pos);
+       }
 }
